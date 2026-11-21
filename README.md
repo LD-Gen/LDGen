@@ -1,10 +1,13 @@
 # LDGen / FBD Prompt Templates
 
-This repository contains the prompt templates and few-shot examples for LDGen and the FBD extension described in the paper.
+This repository contains the PLC-Diagram-Eval benchmark, prompt templates, few-shot examples, and representative generated outputs for LDGen and the FBD extension described in the paper.
 
 ## Directory structure
 
 ```text
+PLC-Diagram-Eval/
+  benchmark.json
+
 common/
   requirement_refinement.md
 
@@ -27,7 +30,29 @@ examples/
   ldtext_non_separated.md
   fbd_core_logic.md
   fbdtext.md
+
+generated_outputs/
+  README.md
+  MA-E-007_LD/
+  MA-E-007_FBD/
+  PLC-M-027_LD/
+  PLC-H-044_LD/
+
+MODEL_CONFIGURATIONS.md
+EVALUATION_PROTOCOL.md
 ```
+
+## PLC-Diagram-Eval benchmark
+
+The [benchmark](PLC-Diagram-Eval/benchmark.json) contains **100 programming tasks**: 30 mathematical algorithm tasks and 70 PLC control tasks, spanning Easy, Medium, and Hard difficulty levels. Each task includes a natural-language requirement, input/output specifications, and associated functional test cases (771 test cases in total). Some tasks also include timing/scan-cycle information, input constraints, or numeric tolerances.
+
+See [Evaluation protocol](EVALUATION_PROTOCOL.md) for the evaluation criteria and metrics reported in the paper.
+
+## Generated outputs
+
+The [generated outputs](generated_outputs/README.md) contain representative LDText/FBDText results for four examples under GPT-4.1 and DeepSeek-V3, with rendered LD/FBD images where provided. The examples are intended to illustrate the output formats and workflow, not to serve as the complete per-task experimental output archive.
+
+The [generated outputs README](generated_outputs/README.md) lists the available text files and image status for every example/model pair.
 
 ## Configuration mapping
 
@@ -52,3 +77,10 @@ The code-generation example files are represented as `<Requirement, LDText>` or 
 ## Runtime placeholders
 
 The prompt templates contain placeholders such as `{requirement}`, `{refined_requirement}`, `{core_logic}`, `{examples}`, and `{non_separated_examples}`. These placeholders are replaced with the corresponding task input or fixed few-shot examples at inference time.
+
+## Model settings and evaluation notes
+
+- [Model configurations](MODEL_CONFIGURATIONS.md): reported model identifiers, decoding settings, and prompt/example configuration.
+- [Evaluation protocol](EVALUATION_PROTOCOL.md): task inputs, correctness criteria, Pass@1, CGSR, and paired ablation analysis.
+
+The `ldmaker` and `fbdmaker` compilers are proprietary and are not included in this repository. This limits independent end-to-end reproduction; the available materials support inspection and partial replication of the reported setup.
