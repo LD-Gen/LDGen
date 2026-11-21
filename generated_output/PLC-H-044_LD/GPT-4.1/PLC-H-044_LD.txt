@@ -1,0 +1,174 @@
+FUNCTION_BLOCK DUAL_CONTACTOR_SAFE_SWITCH
+    VAR_INPUT
+        SelectA : BOOL;
+        SelectB : BOOL;
+        ContactorAFeedback : BOOL;
+        ContactorBFeedback : BOOL;
+        ResetButton : BOOL;
+    END_VAR
+    VAR
+        NotSelectA : BOOL;
+        NotSelectB : BOOL;
+        ValidA : BOOL;
+        ValidB : BOOL;
+        FeedbackConflict : BOOL;
+        NotFeedbackA : BOOL;
+        NotFeedbackB : BOOL;
+        FeedbackClear : BOOL;
+        FaultReset : BOOL;
+        FeedbackFaultLatched : BOOL;
+        SwitchFromA : BOOL;
+        SwitchFromB : BOOL;
+        NotSwitching : BOOL;
+        NotFault : BOOL;
+        AllowA1 : BOOL;
+        AllowB1 : BOOL;
+    END_VAR
+    VAR_OUTPUT
+        ContactorAOutput : BOOL;
+        ContactorBOutput : BOOL;
+        SelectionConflictAlarm : BOOL;
+        FeedbackFaultAlarm : BOOL;
+    END_VAR
+
+    BLOCKS
+        NOT_A : NOT;
+        NOT_B : NOT;
+        VALID_A : AND;
+        VALID_B : AND;
+        CONFLICT : AND;
+        FB_CONFLICT : AND;
+        NOT_FB_A : NOT;
+        NOT_FB_B : NOT;
+        FB_CLEAR : AND;
+        RESET_FAULT : AND;
+        FAULT_RS : RS;
+        SWITCH_A : AND;
+        SWITCH_B : AND;
+        SWITCH_OR : OR;
+        SWITCH_RS : RS;
+        SWITCH_TON : TON;
+        NOT_SWITCH : NOT;
+        NOT_FAULT : NOT;
+        ALLOW_A_1 : AND;
+        ALLOW_A_2 : AND;
+        ALLOW_B_1 : AND;
+        ALLOW_B_2 : AND;
+    END_BLOCKS
+
+    LADDER ladder001
+        FLOWS
+            Power_Positive -> NOT_A.EN;
+            NOT_A.ENO -> NOT_B.EN;
+            NOT_B.ENO -> VALID_A.EN;
+            VALID_A.ENO -> VALID_B.EN;
+            VALID_B.ENO -> CONFLICT.EN;
+            CONFLICT.ENO -> FB_CONFLICT.EN;
+            FB_CONFLICT.ENO -> NOT_FB_A.EN;
+            NOT_FB_A.ENO -> NOT_FB_B.EN;
+            NOT_FB_B.ENO -> FB_CLEAR.EN;
+            FB_CLEAR.ENO -> RESET_FAULT.EN;
+            RESET_FAULT.ENO -> FAULT_RS.EN;
+            FAULT_RS.ENO -> SWITCH_A.EN;
+            SWITCH_A.ENO -> SWITCH_B.EN;
+            SWITCH_B.ENO -> SWITCH_OR.EN;
+            SWITCH_OR.ENO -> SWITCH_RS.EN;
+            SWITCH_RS.ENO -> SWITCH_TON.EN;
+            SWITCH_TON.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            SelectA TO NOT_A.IN;
+            NOT_A.OUT TO NotSelectA;
+
+            SelectB TO NOT_B.IN;
+            NOT_B.OUT TO NotSelectB;
+
+            SelectA TO VALID_A.IN1;
+            NotSelectB TO VALID_A.IN2;
+            VALID_A.OUT TO ValidA;
+
+            SelectB TO VALID_B.IN1;
+            NotSelectA TO VALID_B.IN2;
+            VALID_B.OUT TO ValidB;
+
+            SelectA TO CONFLICT.IN1;
+            SelectB TO CONFLICT.IN2;
+            CONFLICT.OUT TO SelectionConflictAlarm;
+
+            ContactorAFeedback TO FB_CONFLICT.IN1;
+            ContactorBFeedback TO FB_CONFLICT.IN2;
+            FB_CONFLICT.OUT TO FeedbackConflict;
+
+            ContactorAFeedback TO NOT_FB_A.IN;
+            NOT_FB_A.OUT TO NotFeedbackA;
+
+            ContactorBFeedback TO NOT_FB_B.IN;
+            NOT_FB_B.OUT TO NotFeedbackB;
+
+            NotFeedbackA TO FB_CLEAR.IN1;
+            NotFeedbackB TO FB_CLEAR.IN2;
+            FB_CLEAR.OUT TO FeedbackClear;
+
+            ResetButton TO RESET_FAULT.IN1;
+            FeedbackClear TO RESET_FAULT.IN2;
+            RESET_FAULT.OUT TO FaultReset;
+
+            FeedbackConflict TO FAULT_RS.S;
+            FaultReset TO FAULT_RS.R;
+            FAULT_RS.Q TO FeedbackFaultLatched;
+
+            ContactorAOutput TO SWITCH_A.IN1;
+            SelectB TO SWITCH_A.IN2;
+            SWITCH_A.OUT TO SwitchFromA;
+
+            ContactorBOutput TO SWITCH_B.IN1;
+            SelectA TO SWITCH_B.IN2;
+            SWITCH_B.OUT TO SwitchFromB;
+
+            SwitchFromA TO SWITCH_OR.IN1;
+            SwitchFromB TO SWITCH_OR.IN2;
+            SWITCH_OR.OUT TO SWITCH_RS.S;
+
+            SWITCH_TON.Q TO SWITCH_RS.R;
+            SWITCH_RS.Q TO SWITCH_TON.IN;
+            T#2s TO SWITCH_TON.PT;
+
+            FAULT_RS.Q TO FeedbackFaultAlarm;
+        END_CONNECTIONS
+    END_LADDER
+
+    LADDER ladder002
+        FLOWS
+            Power_Positive -> NOT_SWITCH.EN;
+            NOT_SWITCH.ENO -> NOT_FAULT.EN;
+            NOT_FAULT.ENO -> ALLOW_A_1.EN;
+            ALLOW_A_1.ENO -> ALLOW_A_2.EN;
+            ALLOW_A_2.ENO -> ALLOW_B_1.EN;
+            ALLOW_B_1.ENO -> ALLOW_B_2.EN;
+            ALLOW_B_2.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            SwitchingActive TO NOT_SWITCH.IN;
+            NOT_SWITCH.OUT TO NotSwitching;
+
+            FeedbackFaultLatched TO NOT_FAULT.IN;
+            NOT_FAULT.OUT TO NotFault;
+
+            ValidA TO ALLOW_A_1.IN1;
+            NotSwitching TO ALLOW_A_1.IN2;
+            ALLOW_A_1.OUT TO AllowA1;
+
+            AllowA1 TO ALLOW_A_2.IN1;
+            NotFault TO ALLOW_A_2.IN2;
+            ALLOW_A_2.OUT TO ContactorAOutput;
+
+            ValidB TO ALLOW_B_1.IN1;
+            NotSwitching TO ALLOW_B_1.IN2;
+            ALLOW_B_1.OUT TO AllowB1;
+
+            AllowB1 TO ALLOW_B_2.IN1;
+            NotFault TO ALLOW_B_2.IN2;
+            ALLOW_B_2.OUT TO ContactorBOutput;
+        END_CONNECTIONS
+    END_LADDER
+END_FUNCTION_BLOCK

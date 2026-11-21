@@ -1,0 +1,165 @@
+FUNCTION_BLOCK DUAL_CONTACTOR_SAFE
+    VAR_INPUT
+        SelectA : BOOL;
+        SelectB : BOOL;
+        ContactorAFeedback : BOOL;
+        ContactorBFeedback : BOOL;
+        ResetButton : BOOL;
+    END_VAR
+    VAR
+        ValidA : BOOL;
+        ValidB : BOOL;
+        FbFault : BOOL;
+        Switching : BOOL;
+        DelayDone : BOOL;
+        NotSelectB : BOOL;
+        NotSelectA : BOOL;
+        NotReset : BOOL;
+        NeedA : BOOL;
+        NeedB : BOOL;
+    END_VAR
+    VAR_OUTPUT
+        ContactorAOutput : BOOL;
+        ContactorBOutput : BOOL;
+        SelectionConflictAlarm : BOOL;
+        FeedbackFaultAlarm : BOOL;
+    END_VAR
+
+    BLOCKS
+        ValidABlk : AND;
+        ValidBBlk : AND;
+        ConflictBlk : AND;
+        FbSetBlk : AND;
+        FbResetGateBlk : AND;
+        NeedBBlk : AND;
+        NeedABlk : AND;
+        SwitchLatchBlk : OR;
+        DelayTimer : TON;
+
+        NotSelectB_C : NEG_CONTACT;
+        NotSelectA_C : NEG_CONTACT;
+        FbFaultCoil : COIL;
+        FbHoldBranch : CONTACT;
+        ConflictCoil : COIL;
+        FbFaultAlarmCoil : COIL;
+
+        A_Valid : CONTACT;
+        A_NotFault : NEG_CONTACT;
+        A_Delay : CONTACT;
+        A_NotB : NEG_CONTACT;
+        ACoil : COIL;
+
+        B_Valid : CONTACT;
+        B_NotFault : NEG_CONTACT;
+        B_Delay : CONTACT;
+        B_NotA : NEG_CONTACT;
+        BCoil : COIL;
+    END_BLOCKS
+
+    LADDER ladder001
+        FLOWS
+            Power_Positive -> ValidABlk.EN;
+            ValidABlk.ENO -> ValidBBlk.EN;
+            ValidBBlk.ENO -> ConflictBlk.EN;
+            ConflictBlk.ENO -> Power_Negative;
+
+            Power_Positive -> ConflictCoil.EN;
+            ConflictCoil.ENO -> Power_Negative;
+
+            Power_Positive -> FbSetBlk.EN;
+            FbSetBlk.ENO -> FbFaultCoil.EN;
+
+            Power_Positive -> FbHoldBranch.EN;
+            FbHoldBranch.ENO -> FbFaultCoil.EN;
+
+            Power_Positive -> FbFaultAlarmCoil.EN;
+            FbFaultAlarmCoil.ENO -> Power_Negative;
+
+            Power_Positive -> NeedBBlk.EN;
+            NeedBBlk.ENO -> NeedABlk.EN;
+            NeedABlk.ENO -> SwitchLatchBlk.EN;
+            SwitchLatchBlk.ENO -> DelayTimer.EN;
+            DelayTimer.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            SelectA TO ValidABlk.IN1;
+            SelectB TO NotSelectB_C.VAR;
+            NotSelectB_C.VAR TO ValidABlk.IN2;
+            ValidABlk.OUT TO ValidA;
+
+            SelectB TO ValidBBlk.IN1;
+            SelectA TO NotSelectA_C.VAR;
+            NotSelectA_C.VAR TO ValidBBlk.IN2;
+            ValidBBlk.OUT TO ValidB;
+
+            SelectA TO ConflictBlk.IN1;
+            SelectB TO ConflictBlk.IN2;
+            ConflictBlk.OUT TO ConflictCoil.VAR;
+            ConflictCoil.VAR TO SelectionConflictAlarm;
+
+            ContactorAFeedback TO FbSetBlk.IN1;
+            ContactorBFeedback TO FbSetBlk.IN2;
+            FbSetBlk.OUT TO FbFaultCoil.VAR;
+
+            FbFault TO FbHoldBranch.VAR;
+            ResetButton TO FbResetGateBlk.IN1;
+            ContactorAFeedback TO FbResetGateBlk.IN2;
+            ContactorBFeedback TO FbResetGateBlk.IN3;
+            FbResetGateBlk.OUT TO NotReset;
+            NotReset TO FbResetGateBlk.IN4;
+            FbResetGateBlk.OUT TO FbFaultCoil.VAR;
+            FbFaultCoil.VAR TO FbFault;
+
+            FbFault TO FbFaultAlarmCoil.VAR;
+            FbFaultAlarmCoil.VAR TO FeedbackFaultAlarm;
+
+            ContactorAOutput TO NeedBBlk.IN1;
+            ValidB TO NeedBBlk.IN2;
+            NeedBBlk.OUT TO NeedB;
+
+            ContactorBOutput TO NeedABlk.IN1;
+            ValidA TO NeedABlk.IN2;
+            NeedABlk.OUT TO NeedA;
+
+            NeedB TO SwitchLatchBlk.IN1;
+            NeedA TO SwitchLatchBlk.IN2;
+            Switching TO SwitchLatchBlk.IN3;
+            SwitchLatchBlk.OUT TO Switching;
+
+            Switching TO DelayTimer.IN;
+            T#2s TO DelayTimer.PT;
+            DelayTimer.Q TO DelayDone;
+        END_CONNECTIONS
+    END_LADDER
+
+    LADDER ladder002
+        FLOWS
+            Power_Positive -> A_Valid.EN;
+            A_Valid.ENO -> A_NotFault.EN;
+            A_NotFault.ENO -> A_Delay.EN;
+            A_Delay.ENO -> A_NotB.EN;
+            A_NotB.ENO -> ACoil.EN;
+            ACoil.ENO -> Power_Negative;
+
+            Power_Positive -> B_Valid.EN;
+            B_Valid.ENO -> B_NotFault.EN;
+            B_NotFault.ENO -> B_Delay.EN;
+            B_Delay.ENO -> B_NotA.EN;
+            B_NotA.ENO -> BCoil.EN;
+            BCoil.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            ValidA TO A_Valid.VAR;
+            FbFault TO A_NotFault.VAR;
+            DelayDone TO A_Delay.VAR;
+            ContactorBOutput TO A_NotB.VAR;
+            ContactorAOutput TO ACoil.VAR;
+
+            ValidB TO B_Valid.VAR;
+            FbFault TO B_NotFault.VAR;
+            DelayDone TO B_Delay.VAR;
+            ContactorAOutput TO B_NotA.VAR;
+            ContactorBOutput TO BCoil.VAR;
+        END_CONNECTIONS
+    END_LADDER
+END_FUNCTION_BLOCK

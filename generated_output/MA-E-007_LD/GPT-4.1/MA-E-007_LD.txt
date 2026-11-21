@@ -1,0 +1,91 @@
+FUNCTION POINT_INSIDE_CIRCLE : VOID
+    VAR_INPUT
+        PointX : REAL;
+        PointY : REAL;
+        CenterX : REAL;
+        CenterY : REAL;
+        Radius : REAL;
+    END_VAR
+
+    VAR
+        DX : REAL;
+        DY : REAL;
+        DX2 : REAL;
+        DY2 : REAL;
+        DistanceSquared : REAL;
+        RadiusSquared : REAL;
+        InsideCondition : BOOL;
+    END_VAR
+
+    VAR_OUTPUT
+        IsInside : BOOL;
+    END_VAR
+
+    BLOCKS
+        SUB_X : SUB;
+        SUB_Y : SUB;
+        MUL_X : MUL;
+        MUL_Y : MUL;
+        ADD_D : ADD;
+        MUL_R : MUL;
+        LE1 : LE;
+        InsideContact : CONTACT;
+        InsideCoil : COIL;
+    END_BLOCKS
+
+    LADDER ladder001
+        FLOWS
+            Power_Positive -> SUB_X.EN;
+            SUB_X.ENO -> SUB_Y.EN;
+            SUB_Y.ENO -> MUL_X.EN;
+            MUL_X.ENO -> MUL_Y.EN;
+            MUL_Y.ENO -> ADD_D.EN;
+            ADD_D.ENO -> MUL_R.EN;
+            MUL_R.ENO -> LE1.EN;
+            LE1.ENO -> Power_Negative;
+        END_FLOWS
+
+        CONNECTIONS
+            PointX TO SUB_X.IN1;
+            CenterX TO SUB_X.IN2;
+            SUB_X.OUT TO DX;
+
+            PointY TO SUB_Y.IN1;
+            CenterY TO SUB_Y.IN2;
+            SUB_Y.OUT TO DY;
+
+            DX TO MUL_X.IN1;
+            DX TO MUL_X.IN2;
+            MUL_X.OUT TO DX2;
+
+            DY TO MUL_Y.IN1;
+            DY TO MUL_Y.IN2;
+            MUL_Y.OUT TO DY2;
+
+            DX2 TO ADD_D.IN1;
+            DY2 TO ADD_D.IN2;
+            ADD_D.OUT TO DistanceSquared;
+
+            Radius TO MUL_R.IN1;
+            Radius TO MUL_R.IN2;
+            MUL_R.OUT TO RadiusSquared;
+
+            DistanceSquared TO LE1.IN1;
+            RadiusSquared TO LE1.IN2;
+            LE1.OUT TO InsideCondition;
+        END_CONNECTIONS
+    END_LADDER
+
+    LADDER ladder002
+        FLOWS
+            Power_Positive -> InsideContact.EN;
+            InsideContact.ENO -> InsideCoil.EN;
+            InsideCoil.ENO -> Power_Negative;
+        END_FLOWS
+
+        CONNECTIONS
+            InsideCondition TO InsideContact.VAR;
+            InsideCoil.VAR TO IsInside;
+        END_CONNECTIONS
+    END_LADDER
+END_FUNCTION

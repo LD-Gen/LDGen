@@ -1,0 +1,63 @@
+FUNCTION_BLOCK TEMPERATURE_FAN_CONTROL
+    VAR_INPUT
+        Temperature : REAL;
+        ManualForceVentilation : BOOL;
+    END_VAR
+    VAR
+        AutoSet : BOOL;
+        AutoReset : BOOL;
+        AutoFanState : BOOL;
+        FanCommand : BOOL;
+        SR1 : SR;
+    END_VAR
+    VAR_OUTPUT
+        FanOutput : BOOL;
+    END_VAR
+
+    BLOCKS
+        GT1 : GT;
+        LT1 : LT;
+        OR1 : OR;
+        FanContact : CONTACT;
+        FanCoil : COIL;
+    END_BLOCKS
+
+    LADDER ladder001
+        FLOWS
+            Power_Positive -> GT1.EN;
+            GT1.ENO -> LT1.EN;
+            LT1.ENO -> SR1.EN;
+            SR1.ENO -> OR1.EN;
+            OR1.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            Temperature TO GT1.IN1;
+            30.0 TO GT1.IN2;
+            GT1.OUT TO AutoSet;
+
+            Temperature TO LT1.IN1;
+            25.0 TO LT1.IN2;
+            LT1.OUT TO AutoReset;
+
+            AutoSet TO SR1.SET1;
+            AutoReset TO SR1.RESET;
+            SR1.Q1 TO AutoFanState;
+
+            AutoFanState TO OR1.IN1;
+            ManualForceVentilation TO OR1.IN2;
+            OR1.OUT TO FanCommand;
+        END_CONNECTIONS
+    END_LADDER
+
+    LADDER ladder002
+        FLOWS
+            Power_Positive -> FanContact.EN;
+            FanContact.ENO -> FanCoil.EN;
+            FanCoil.ENO -> Power_Negative;
+        END_FLOWS
+        CONNECTIONS
+            FanCommand TO FanContact.VAR;
+            FanCoil.VAR TO FanOutput;
+        END_CONNECTIONS
+    END_LADDER
+END_FUNCTION_BLOCK

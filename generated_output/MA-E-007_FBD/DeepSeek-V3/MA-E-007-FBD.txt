@@ -1,0 +1,41 @@
+FUNCTION PointInsideCircle : VOID
+    VAR_INPUT
+        PointX : REAL;
+        PointY : REAL;
+        CenterX : REAL;
+        CenterY : REAL;
+        Radius : REAL;
+    END_VAR
+
+    VAR_OUTPUT
+        IsInside : BOOL;
+    END_VAR
+
+    SYMBOLS
+        SUB1 : SUB;
+        SUB2 : SUB;
+        MUL1 : MUL;
+        MUL2 : MUL;
+        MUL3 : MUL;
+        ADD1 : ADD;
+        LE1 : LE;
+    END_SYMBOLS
+
+    CONNECTIONS
+        PointX TO SUB1.IN1;
+        CenterX TO SUB1.IN2;
+        PointY TO SUB2.IN1;
+        CenterY TO SUB2.IN2;
+        SUB1.OUT TO MUL1.IN1;
+        SUB1.OUT TO MUL1.IN2;
+        SUB2.OUT TO MUL2.IN1;
+        SUB2.OUT TO MUL2.IN2;
+        MUL1.OUT TO ADD1.IN1;
+        MUL2.OUT TO ADD1.IN2;
+        Radius TO MUL3.IN1;
+        Radius TO MUL3.IN2;
+        ADD1.OUT TO LE1.IN1;
+        MUL3.OUT TO LE1.IN2;
+        LE1.OUT TO IsInside;
+    END_CONNECTIONS
+END_FUNCTION
